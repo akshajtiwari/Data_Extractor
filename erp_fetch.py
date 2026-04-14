@@ -23,7 +23,7 @@ CURRENT_DAY_NAME = DAY_NAMES[CURRENT_DAY_INDEX]
 print(f"Running for: {CURRENT_DAY_NAME} ({now.strftime('%d %b %Y, %I:%M %p IST')})")
 
 options = webdriver.ChromeOptions()
-# options.add_argument("--headless")
+options.add_argument("--headless")
 # options.add_argument("--no-sandbox")
 # options.add_argument("--disable-dev-shm-usage")
 # options.add_argument("--disable-gpu")
