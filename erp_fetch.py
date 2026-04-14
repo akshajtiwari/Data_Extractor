@@ -10,17 +10,17 @@ from datetime import datetime
 import pytz
 import time
 import os
+import json
 
-# ── Current day (IST) ───────────────────────────────────────────────────────
+# Current day
 IST = pytz.timezone("Asia/Kolkata")
 now = datetime.now(IST)
 
-CURRENT_DAY_INDEX = now.weekday()  # 0 = Monday ... 6 = Sunday
+CURRENT_DAY_INDEX = now.weekday()
 DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 CURRENT_DAY_NAME = DAY_NAMES[CURRENT_DAY_INDEX]
 
 print(f"Running for: {CURRENT_DAY_NAME} ({now.strftime('%d %b %Y, %I:%M %p IST')})")
-# ────────────────────────────────────────────────────────────────────────────
 
 options = webdriver.ChromeOptions()
 # options.add_argument("--headless")
@@ -61,14 +61,14 @@ def login():
 
         try:
             WebDriverWait(driver, 20).until(EC.url_contains("/Student"))
-            print("login was successful")
+            print("login successful")
             return True
         except:
             print("login failed - invalid credentials or unexpected redirect")
             return False
 
     except Exception as e:
-        print("Login error:", e)
+        print("login error:", e)
         return False
 
 
@@ -122,14 +122,13 @@ def get_attendance():
                 print(f"  {label} : {value}")
             print("==============================\n")
         else:
-            print("could not find attendance stats - page structure may differ")
-            print("--- raw page text (first 3000 chars for debugging) ---")
+            print("could not find attendance stats")
             print(soup.get_text(separator="\n")[:3000])
 
         return stats
 
     except Exception as e:
-        print("Error loading attendance page:", e)
+        print("error loading attendance page:", e)
         return {}
 
 
@@ -163,7 +162,7 @@ def extract_timetable_for_day(soup, day_name):
                 if slots:
                     return slots
 
-    # Strategy 3: day appears as a heading/label, content in next sibling
+    # Strategy 3: day appears as a heading, content in next sibling
     day_header = soup.find(
         lambda tag: tag.name in ("h2", "h3", "h4", "h5", "th", "td", "div", "span", "p")
         and day_name_lower in tag.get_text(strip=True).lower()
@@ -195,25 +194,39 @@ def get_timetable():
             for i, slot in enumerate(slots, 1):
                 print(f"  Period {i}: {slot}")
         else:
-            print("  No classes found (or page structure didn't match any strategy).")
-            print("  --- Raw page text (first 3000 chars for debugging) ---")
+            print("  no classes found")
             print(soup.get_text(separator="\n")[:3000])
         print("=" * (len(CURRENT_DAY_NAME) + 22) + "\n")
 
         return slots
 
     except Exception as e:
-        print("Error loading timetable page:", e)
+        print("error loading timetable page:", e)
         return []
 
 
-# ── main flow ────────────────────────────────────────────────────────────────
+def save_to_json(attendance, timetable, success=True):
+    payload = {
+        "success": success,
+        "day": CURRENT_DAY_NAME,
+        "date": now.strftime("%d %b %Y, %I:%M %p IST"),
+        "attendance": attendance,
+        "timetable": timetable
+    }
+    with open("data.json", "w") as f:
+        json.dump(payload, f, indent=2)
+    print("data saved to data.json")
+
+
+#main flow
 if login():
     time.sleep(2)
     attendance_data = get_attendance()
     time.sleep(2)
-    get_timetable()
+    timetable_data = get_timetable()
+    save_to_json(attendance_data, timetable_data, success=True)
 else:
+    save_to_json({}, [], success=False)
     print("aborting - login unsuccessful")
 
 driver.quit()
