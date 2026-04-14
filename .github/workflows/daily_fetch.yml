@@ -2,8 +2,11 @@ name: Daily ERP Fetch
 
 on:
   schedule:
-    - cron: '30 08 * * 1-5'   # 9:00 AM IST, Monday–Friday only
-  workflow_dispatch:           # lets you trigger it manually from the Actions tab
+    - cron: '30 08 * * 1-5'
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true     
 
 jobs:
   fetch:
@@ -11,24 +14,38 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2            
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.6.0        
         with:
           python-version: '3.11'
 
       - name: Install dependencies
         run: |
-          pip install selenium beautifulsoup4 python-dotenv pytz webdriver-manager
+          pip install selenium beautifulsoup4 python-dotenv pytz webdriver-manager requests
 
       - name: Install Chrome
         run: |
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
+          google-chrome --version                
 
-      - name: Run ERP script
+      - name: Fetch ERP data
         env:
           username: ${{ secrets.ERP_USERNAME }}
           password: ${{ secrets.ERP_PASSWORD }}
         run: python erp_fetch.py
+
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python notify_discord.py
+
+      - name: Upload log file
+        if: always()
+        uses: actions/upload-artifact@v4.6.2     
+        with:
+          name: erp-log-${{ github.run_id }}
+          path: logs/
+          retention-days: 30
