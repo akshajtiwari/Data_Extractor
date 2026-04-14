@@ -1,0 +1,34 @@
+name: Daily ERP Fetch
+
+on:
+  schedule:
+    - cron: '30 3 * * 1-5'   # 9:00 AM IST, Monday–Friday only
+  workflow_dispatch:           # lets you trigger it manually from the Actions tab
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install selenium beautifulsoup4 python-dotenv pytz webdriver-manager
+
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Run ERP script
+        env:
+          username: ${{ secrets.ERP_USERNAME }}
+          password: ${{ secrets.ERP_PASSWORD }}
+        run: python erp_fetch.py
