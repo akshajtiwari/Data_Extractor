@@ -2,7 +2,7 @@ name: Daily ERP Fetch
 
 on:
   schedule:
-    - cron: '30 08 * * 1-5'
+    - cron: '0 3 * * 1-5'
   workflow_dispatch:
 
 env:
@@ -41,11 +41,3 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python notify_discord.py
-
-      - name: Upload log file
-        if: always()
-        uses: actions/upload-artifact@v4.6.2     
-        with:
-          name: erp-log-${{ github.run_id }}
-          path: logs/
-          retention-days: 30
