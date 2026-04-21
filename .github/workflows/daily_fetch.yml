@@ -2,7 +2,7 @@ name: Daily ERP Fetch
 
 on:
   schedule:
-    - cron: '0 2 * * 1-5'
+    - cron: '30 21 * * 0-4'
   workflow_dispatch:
 
 env:
